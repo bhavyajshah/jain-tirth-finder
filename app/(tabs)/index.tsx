@@ -17,13 +17,13 @@ export default function ExploreScreen() {
   const [infoModalVisible, setInfoModalVisible] = useState(false);
   const [showTirthList, setShowTirthList] = useState(false);
   const [mapType, setMapType] = useState('standard');
-  
+
   const { tirths, activeRoute, loading, error } = useSelector((state: RootState) => state.tirths);
 
   useEffect(() => {
     // Load favorites from AsyncStorage
     dispatch(loadFavoritesThunk());
-    
+
     // Get location and fetch tirths
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
@@ -37,7 +37,7 @@ export default function ExploreScreen() {
       try {
         let location = await Location.getCurrentPositionAsync({});
         setLocation(location);
-        
+
         // Fetch tirths near user's location
         dispatch(fetchTirthsNearLocationThunk({
           latitude: location.coords.latitude,
@@ -47,7 +47,7 @@ export default function ExploreScreen() {
       } catch (error) {
         console.error('Error getting location:', error);
         setErrorMsg('Could not determine your location');
-        
+
         // Fallback: fetch all tirths
         dispatch(fetchTirthsThunk());
       }
@@ -68,7 +68,7 @@ export default function ExploreScreen() {
   };
 
   const renderTirthItem = ({ item }: { item: any }) => (
-    <TouchableOpacity 
+    <TouchableOpacity
       style={styles.tirthItem}
       onPress={() => handleMarkerPress(item)}
     >
@@ -84,9 +84,9 @@ export default function ExploreScreen() {
           <Text style={styles.tirthItemDistance}>{item.distance}</Text>
         </View>
       </View>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.tirthItemAction}
-        onPress={() => {}}
+        onPress={() => { }}
       >
         <Navigation size={20} color="#FF6B00" />
       </TouchableOpacity>
@@ -138,30 +138,30 @@ export default function ExploreScreen() {
         </View>
       ) : (
         <View style={styles.mapContainer}>
-          <MapComponent 
+          <MapComponent
             initialRegion={initialRegion}
             tirths={tirths}
             onMarkerPress={handleMarkerPress}
           />
 
           <View style={styles.mapControls}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.mapControlButton}
               onPress={toggleMapType}
             >
               <Layers size={24} color="#FFFFFF" />
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.mapControlButton}
               onPress={toggleTirthList}
             >
               <List size={24} color="#FFFFFF" />
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.mapControlButton}
-              onPress={() => {}}
+              onPress={() => { }}
             >
               <Info size={24} color="#FFFFFF" />
             </TouchableOpacity>
@@ -175,7 +175,7 @@ export default function ExploreScreen() {
                   <Text style={styles.tirthListClose}>Close</Text>
                 </TouchableOpacity>
               </View>
-              
+
               {tirths.length > 0 ? (
                 <FlatList
                   data={tirths}

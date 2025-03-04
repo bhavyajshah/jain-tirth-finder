@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { 
-  getAllTirths, 
-  getTirthsByType, 
+import {
+  getAllTirths,
+  getTirthsByType,
   getTirthsNearLocation,
   getTirthById,
   saveRoute,
@@ -147,6 +147,50 @@ const mockTirths: Tirth[] = [
       { name: 'Annual Pilgrimage', date: 'November 10-15' },
       { name: 'Meditation Retreat', date: 'First Sunday of every month' }
     ]
+  },
+  {
+    id: '4',
+    name: 'Shri Mahavir Swami Jain Temple',
+    type: 'Digambar',
+    location: {
+      latitude: 28.6562,
+      longitude: 77.2410,
+    },
+    description: 'A beautiful Jain temple in Delhi dedicated to Lord Mahavir, the 24th Tirthankara of Jainism.',
+    images: ['https://images.unsplash.com/photo-1588096344356-9b02fafabe79'],
+    timings: '5:00 AM - 9:00 PM',
+    distance: '5.1 km',
+    rating: 4.7,
+    reviews: 178,
+    facilities: ['Parking', 'Restrooms', 'Meditation Hall', 'Library'],
+    history: 'This temple was built in the 20th century and serves as an important center for Jain religious activities in Delhi.',
+    significance: 'Houses beautiful idols of Tirthankaras and is known for its peaceful atmosphere.',
+    events: [
+      { name: 'Mahavir Jayanti Celebration', date: 'April 14' },
+      { name: 'Weekly Discourse', date: 'Every Sunday' }
+    ]
+  },
+  {
+    id: '5',
+    name: 'Gomateshwara Temple',
+    type: 'Digambar',
+    location: {
+      latitude: 12.9141,
+      longitude: 76.4587,
+    },
+    description: 'Home to the monolithic statue of Bahubali, standing 57 feet tall and carved from a single block of granite.',
+    images: ['https://images.unsplash.com/photo-1590050752117-238cb0fb12b1'],
+    timings: '7:30 AM - 5:30 PM',
+    distance: '8.7 km',
+    rating: 4.9,
+    reviews: 412,
+    facilities: ['Parking', 'Restrooms', 'Guides', 'Souvenir Shop'],
+    history: 'The statue was commissioned by Chavundaraya, a minister of the Ganga Dynasty, in 981 CE.',
+    significance: 'One of the largest free-standing statues in the world and a major pilgrimage site.',
+    events: [
+      { name: 'Mahamastakabhisheka', date: 'Once every 12 years' },
+      { name: 'Annual Festival', date: 'January 20-25' }
+    ]
   }
 ];
 
@@ -200,12 +244,12 @@ export const fetchTirthsThunk = createAsyncThunk(
     try {
       // For development, return mock data
       return { tirths: mockTirths, lastVisible: null };
-      
+
       // In production, use this:
       /*
       const state = getState() as { tirths: TirthsState };
       const { lastVisible } = state.tirths;
-      
+
       const result = await getAllTirths(lastVisible);
       return result;
       */
@@ -221,7 +265,7 @@ export const fetchTirthsByTypeThunk = createAsyncThunk(
     try {
       // For development, filter mock data
       return mockTirths.filter(tirth => tirth.type === type);
-      
+
       // In production, use this:
       /*
       const tirths = await getTirthsByType(type);
@@ -239,7 +283,7 @@ export const fetchTirthsNearLocationThunk = createAsyncThunk(
     try {
       // For development, return mock data
       return mockTirths;
-      
+
       // In production, use this:
       /*
       const tirths = await getTirthsNearLocation(latitude, longitude, radius);
@@ -259,7 +303,7 @@ export const fetchTirthByIdThunk = createAsyncThunk(
       const tirth = mockTirths.find(t => t.id === id);
       if (!tirth) throw new Error('Tirth not found');
       return tirth;
-      
+
       // In production, use this:
       /*
       const tirth = await getTirthById(id);
@@ -277,7 +321,7 @@ export const saveRouteThunk = createAsyncThunk(
     try {
       // For development, just return with a mock ID
       return { ...route, id: Date.now().toString() };
-      
+
       // In production, use this:
       /*
       const routeId = await saveRoute(route);
@@ -295,7 +339,7 @@ export const fetchUserRoutesThunk = createAsyncThunk(
     try {
       // For development, return empty array
       return [];
-      
+
       // In production, use this:
       /*
       const routes = await getUserRoutes(userId);
@@ -313,7 +357,7 @@ export const deleteRouteThunk = createAsyncThunk(
     try {
       // For development, just return the ID
       return routeId;
-      
+
       // In production, use this:
       /*
       await deleteRoute(routeId);
@@ -333,9 +377,9 @@ export const fetchEventsThunk = createAsyncThunk(
       const today = new Date().toISOString().split('T')[0];
       const upcomingEvents = mockEvents.filter(event => event.date >= today);
       const pastEvents = mockEvents.filter(event => event.date < today);
-      
+
       return { upcomingEvents, pastEvents };
-      
+
       // In production, use this:
       /*
       const upcomingEvents = await getUpcomingEvents();
@@ -354,7 +398,7 @@ export const addReviewThunk = createAsyncThunk(
     try {
       // For development, just return with a mock ID
       return { ...review, id: Date.now().toString(), date: new Date() };
-      
+
       // In production, use this:
       /*
       const reviewId = await addReview(review);
@@ -416,7 +460,7 @@ export const tirthsSlice = createSlice({
         state.favorites = state.favorites.filter(id => id !== tirthId);
       } else {
         state.favorites.push(tirthId);
-      }
+       }
       // Save to AsyncStorage
       saveFavoritesToStorage(state.favorites);
     },
@@ -444,7 +488,7 @@ export const tirthsSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch tirths by type
       .addCase(fetchTirthsByTypeThunk.pending, (state) => {
         state.loading = true;
@@ -458,7 +502,7 @@ export const tirthsSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch tirths near location
       .addCase(fetchTirthsNearLocationThunk.pending, (state) => {
         state.loading = true;
@@ -472,7 +516,7 @@ export const tirthsSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch events
       .addCase(fetchEventsThunk.pending, (state) => {
         state.loading = true;
@@ -487,7 +531,7 @@ export const tirthsSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      
+
       // Load favorites
       .addCase(loadFavoritesThunk.fulfilled, (state, action) => {
         state.favorites = action.payload;
@@ -495,10 +539,10 @@ export const tirthsSlice = createSlice({
   }
 });
 
-export const { 
-  setActiveRoute, 
-  addTirthsAlongRoute, 
-  toggleFavorite, 
+export const {
+  setActiveRoute,
+  addTirthsAlongRoute,
+  toggleFavorite,
   updateFilters,
   clearActiveRoute
 } = tirthsSlice.actions;

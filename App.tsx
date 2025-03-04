@@ -35,10 +35,12 @@ export default function App() {
   // Return loading screen while fonts load
   if (!fontsLoaded && !fontError) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#FF6B00" />
-        <Text style={styles.loadingText}>Loading Jain Tirth Finder...</Text>
-      </View>
+      <Provider store={store}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF6B00" />
+          <Text style={styles.loadingText}>Loading Jain Tirth Finder...</Text>
+        </View>
+      </Provider>
     );
   }
 
