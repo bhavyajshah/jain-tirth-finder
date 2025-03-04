@@ -1,36 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Switch, TouchableOpacity, ScrollView, Alert, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Bell, Moon, MapPin, Info, CircleHelp as HelpCircle, LogOut, Globe, Download, Star, Shield } from 'lucide-react-native';
+import { Bell, Moon, MapPin, Info, CircleHelp as HelpCircle, LogOut, Globe, Download, Star, Shield, User } from 'lucide-react-native';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from '../../store';
+import { signOutThunk, updatePreference, updatePreferencesThunk } from '../../store/authSlice';
 import LanguageSelector from '../../components/LanguageSelector';
+import AuthModal from '../../components/AuthModal';
 
 export default function SettingsScreen() {
-  const [notifications, setNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
-  const [locationServices, setLocationServices] = useState(true);
-  const [offlineMode, setOfflineMode] = useState(false);
-  const [autoCheckIn, setAutoCheckIn] = useState(false);
+  const dispatch = useDispatch();
+  const { isAuthenticated, uid, displayName, preferences } = useSelector((state: RootState) => state.auth);
+  
   const [languageSelectorVisible, setLanguageSelectorVisible] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const [authModalVisible, setAuthModalVisible] = useState(false);
+
+  // Use preferences from Redux store
+  const { 
+    notifications, 
+    darkMode, 
+    locationServices, 
+    offlineMode, 
+    autoCheckIn, 
+    language 
+  } = preferences;
+
+  // Update preferences in Firebase when they change
+  useEffect(() => {
+    if (isAuthenticated && uid) {
+      dispatch(updatePreferencesThunk({ userId: uid, preferences }));
+    }
+  }, [preferences, isAuthenticated, uid]);
 
   const toggleSwitch = (setting: string, value: boolean) => {
-    switch (setting) {
-      case 'notifications':
-        setNotifications(value);
-        break;
-      case 'darkMode':
-        setDarkMode(value);
-        break;
-      case 'locationServices':
-        setLocationServices(value);
-        break;
-      case 'offlineMode':
-        setOfflineMode(value);
-        break;
-      case 'autoCheckIn':
-        setAutoCheckIn(value);
-        break;
-    }
+    dispatch(updatePreference({ key: setting as any, value }));
   };
 
   const handleAbout = () => {
@@ -42,7 +45,6 @@ export default function SettingsScreen() {
   };
 
   const handleHelp = () => {
-    // In a real app, this would open a help center or documentation
     Alert.alert(
       'Help & Support',
       'For assistance, please contact us at support@jaintirthfinder.com',
@@ -51,20 +53,23 @@ export default function SettingsScreen() {
   };
 
   const handleLogout = () => {
-    // In a real app, this would handle user logout
     Alert.alert(
       'Logout',
       'Are you sure you want to logout?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive' }
+        { 
+          text: 'Logout', 
+          style: 'destructive',
+          onPress: () => dispatch(signOutThunk())
+        }
       ]
     );
   };
 
   const handleLanguageSelect = (languageCode: string) => {
-    setSelectedLanguage(languageCode);
-    // In a real app, this would update the app's language
+    dispatch(updatePreference({ key: 'language', value: languageCode }));
+    setLanguageSelectorVisible(false);
   };
 
   const getLanguageName = (code: string) => {
@@ -88,6 +93,22 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView style={styles.scrollView}>
+        {isAuthenticated ? (
+          <View style={styles.profileSection}>
+            <View style={styles.profileIcon}>
+              <User size={32} color="#FFFFFF" />
+            </View>
+            <Text style={styles.profileName}>{displayName}</Text>
+          </View>
+        ) : (
+          <TouchableOpacity 
+            style={styles.loginButton}
+            onPress={() => setAuthModalVisible(true)}
+          >
+            <Text style={styles.loginButtonText}>Sign In / Create Account</Text>
+          </TouchableOpacity>
+        )}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Preferences</Text>
           
@@ -165,7 +186,7 @@ export default function SettingsScreen() {
               <Text style={styles.settingText}>Language</Text>
             </View>
             <View style={styles.languageValue}>
-              <Text style={styles.languageText}>{getLanguageName(selectedLanguage)}</Text>
+              <Text style={styles.languageText}>{getLanguageName(language)}</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -198,10 +219,12 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-          <LogOut size={20} color="#FFFFFF" />
-          <Text style={styles.logoutText}>Logout</Text>
-        </TouchableOpacity>
+        {isAuthenticated && (
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+            <LogOut size={20} color="#FFFFFF" />
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        )}
 
         <View style={styles.versionContainer}>
           <Text style={styles.versionText}>Version 1.0.0</Text>
@@ -211,8 +234,13 @@ export default function SettingsScreen() {
       <LanguageSelector
         visible={languageSelectorVisible}
         onClose={() => setLanguageSelectorVisible(false)}
-        selectedLanguage={selectedLanguage}
+        selectedLanguage={language}
         onSelectLanguage={handleLanguageSelect}
+      />
+
+      <AuthModal
+        visible={authModalVisible}
+        onClose={() => setAuthModalVisible(false)}
       />
     </SafeAreaView>
   );
@@ -236,6 +264,46 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+  },
+  profileSection: {
+    backgroundColor: '#FFFFFF',
+    margin: 16,
+    marginBottom: 8,
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  profileIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#FF6B00',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  profileName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333333',
+  },
+  loginButton: {
+    backgroundColor: '#FF6B00',
+    margin: 16,
+    marginBottom: 8,
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  loginButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   section: {
     backgroundColor: '#FFFFFF',

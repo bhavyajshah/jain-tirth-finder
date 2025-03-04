@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Platform, FlatList } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, Platform, FlatList, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { RootState } from '../../store';
+import { fetchTirthsThunk, fetchTirthsNearLocationThunk, loadFavoritesThunk } from '../../store/tirthsSlice';
 import { MapPin, Info, List, Layers, Navigation } from 'lucide-react-native';
 import TirthInfoModal from '../../components/TirthInfoModal';
 import MapComponent from '../../components/MapComponent';
 import * as Location from 'expo-location';
 
 export default function ExploreScreen() {
+  const dispatch = useDispatch();
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedTirth, setSelectedTirth] = useState<any>(null);
@@ -16,20 +18,41 @@ export default function ExploreScreen() {
   const [showTirthList, setShowTirthList] = useState(false);
   const [mapType, setMapType] = useState('standard');
   
-  const { tirths, activeRoute } = useSelector((state: RootState) => state.tirths);
+  const { tirths, activeRoute, loading, error } = useSelector((state: RootState) => state.tirths);
 
   useEffect(() => {
+    // Load favorites from AsyncStorage
+    dispatch(loadFavoritesThunk());
+    
+    // Get location and fetch tirths
     (async () => {
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setErrorMsg('Permission to access location was denied');
+        // Fallback: fetch all tirths
+        dispatch(fetchTirthsThunk());
         return;
       }
 
-      let location = await Location.getCurrentPositionAsync({});
-      setLocation(location);
+      try {
+        let location = await Location.getCurrentPositionAsync({});
+        setLocation(location);
+        
+        // Fetch tirths near user's location
+        dispatch(fetchTirthsNearLocationThunk({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          radius: 50 // 50km radius
+        }));
+      } catch (error) {
+        console.error('Error getting location:', error);
+        setErrorMsg('Could not determine your location');
+        
+        // Fallback: fetch all tirths
+        dispatch(fetchTirthsThunk());
+      }
     })();
-  }, []);
+  }, [dispatch]);
 
   const handleMarkerPress = (tirth: any) => {
     setSelectedTirth(tirth);
@@ -81,6 +104,20 @@ export default function ExploreScreen() {
     latitudeDelta: 20,
     longitudeDelta: 20,
   };
+
+  if (loading && !tirths.length) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Jain Tirth Finder</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF6B00" />
+          <Text style={styles.loadingText}>Loading Jain Tirths...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -334,5 +371,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666666',
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666666',
   },
 });

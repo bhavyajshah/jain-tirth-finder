@@ -1,7 +1,11 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Image, ScrollView, Dimensions, Linking } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Image, ScrollView, Dimensions, Linking, ActivityIndicator } from 'react-native';
 import { X, Clock, MapPin, ExternalLink, Calendar, Star, Info, Camera, Heart } from 'lucide-react-native';
 import { AirbnbRating } from 'react-native-ratings';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../store';
+import { toggleFavorite, addReviewThunk } from '../store/tirthsSlice';
+import AuthModal from './AuthModal';
 
 interface TirthInfoModalProps {
   tirth: any;
@@ -10,10 +14,16 @@ interface TirthInfoModalProps {
 }
 
 export default function TirthInfoModal({ tirth, visible, onClose }: TirthInfoModalProps) {
+  const dispatch = useDispatch();
+  const { favorites, loading } = useSelector((state: RootState) => state.tirths);
+  const { isAuthenticated, uid, displayName } = useSelector((state: RootState) => state.auth);
+  
   const [activeTab, setActiveTab] = useState('about');
-  const [isFavorite, setIsFavorite] = useState(false);
   const [userRating, setUserRating] = useState(0);
   const [showRatingSubmitted, setShowRatingSubmitted] = useState(false);
+  const [authModalVisible, setAuthModalVisible] = useState(false);
+
+  const isFavorite = tirth && favorites.includes(tirth.id);
 
   if (!tirth) return null;
 
@@ -23,7 +33,22 @@ export default function TirthInfoModal({ tirth, visible, onClose }: TirthInfoMod
   };
 
   const handleRating = (rating: number) => {
+    if (!isAuthenticated) {
+      setAuthModalVisible(true);
+      return;
+    }
+    
     setUserRating(rating);
+    
+    // Submit rating to Firebase
+    dispatch(addReviewThunk({
+      userId: uid!,
+      userName: displayName || 'Anonymous',
+      tirthId: tirth.id,
+      rating: rating,
+      comment: ''
+    }));
+    
     setShowRatingSubmitted(true);
     setTimeout(() => {
       setShowRatingSubmitted(false);
@@ -31,7 +56,12 @@ export default function TirthInfoModal({ tirth, visible, onClose }: TirthInfoMod
   };
 
   const handleToggleFavorite = () => {
-    setIsFavorite(!isFavorite);
+    if (!isAuthenticated) {
+      setAuthModalVisible(true);
+      return;
+    }
+    
+    dispatch(toggleFavorite(tirth.id));
   };
 
   return (
@@ -74,7 +104,7 @@ export default function TirthInfoModal({ tirth, visible, onClose }: TirthInfoMod
                 {tirth.rating && (
                   <View style={styles.ratingBadge}>
                     <Star size={16} color="#FFD700" />
-                    <Text style={styles.ratingText}>{tirth.rating} ({tirth.reviews})</Text>
+                    <Text style={styles.ratingText}>{tirth.rating.toFixed(1)} ({tirth.reviews})</Text>
                   </View>
                 )}
               </View>
@@ -141,6 +171,9 @@ export default function TirthInfoModal({ tirth, visible, onClose }: TirthInfoMod
                       showRating={false}
                       onFinishRating={handleRating}
                     />
+                    {loading && (
+                      <ActivityIndicator color="#FF6B00" style={{ marginTop: 8 }} />
+                    )}
                     {showRatingSubmitted && (
                       <Text style={styles.ratingSubmitted}>Thank you for your rating!</Text>
                     )}
@@ -225,6 +258,11 @@ export default function TirthInfoModal({ tirth, visible, onClose }: TirthInfoMod
           </ScrollView>
         </View>
       </View>
+
+      <AuthModal
+        visible={authModalVisible}
+        onClose={() => setAuthModalVisible(false)}
+      />
     </Modal>
   );
 }

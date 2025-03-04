@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
-import { Map, Search, BookMarked, Settings, Calendar } from 'lucide-react-native';
+import { Map, Search, BookMarked, Calendar, Settings } from 'lucide-react-native';
 
 export default function TabLayout() {
   return (

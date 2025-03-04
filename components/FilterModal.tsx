@@ -108,7 +108,7 @@ export default function FilterModal({ visible, onClose, filters, onApplyFilters 
               </View>
               
               <View style={styles.filterItem}>
-                <Text style={styles.filterText}>Modern (< 100 years)</Text>
+                <Text style={styles.filterText}>Modern (less than 100 years)</Text>
                 <Switch
                   trackColor={{ false: '#E5E5E5', true: '#FFD3B6' }}
                   thumbColor={localFilters.modern ? '#FF6B00' : '#F4F4F4'}
@@ -184,7 +184,6 @@ export default function FilterModal({ visible, onClose, filters, onApplyFilters 
         </View>
       </View>
     </Modal>
-  )
   );
 }
 

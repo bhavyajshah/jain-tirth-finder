@@ -1,71 +1,21 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Calendar, Clock, MapPin, Bell, Filter } from 'lucide-react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../store';
+import { fetchEventsThunk } from '../../store/tirthsSlice';
 
 export default function EventsScreen() {
+  const dispatch = useDispatch();
+  const { upcomingEvents, pastEvents, loading, error } = useSelector((state: RootState) => state.tirths);
+  
   const [activeFilter, setActiveFilter] = useState('upcoming');
   const [notificationEnabled, setNotificationEnabled] = useState<{[key: string]: boolean}>({});
 
-  const events = [
-    {
-      id: '1',
-      name: 'Mahavir Jayanti Celebration',
-      location: 'Palitana Temples',
-      date: '2025-04-14',
-      time: '6:00 AM - 8:00 PM',
-      description: 'Annual celebration of Lord Mahavir\'s birth with special prayers and rituals.',
-      image: 'https://images.unsplash.com/photo-1609766418204-df8e0c218ba6',
-    },
-    {
-      id: '2',
-      name: 'Paryushan Parva',
-      location: 'Ranakpur Temple',
-      date: '2025-08-15',
-      time: '7:00 AM - 9:00 PM',
-      description: 'Eight-day festival of spiritual awakening and renewal.',
-      image: 'https://images.unsplash.com/photo-1590050752117-238cb0fb12b1',
-    },
-    {
-      id: '3',
-      name: 'Das Lakshana Festival',
-      location: 'Dilwara Temples',
-      date: '2025-08-23',
-      time: '6:00 AM - 7:00 PM',
-      description: 'Ten-day festival following Paryushan celebrating the ten virtues.',
-      image: 'https://images.unsplash.com/photo-1588096344356-9b02fafabe79',
-    },
-    {
-      id: '4',
-      name: 'Diwali & New Year Celebration',
-      location: 'Shri Digambar Jain Lal Mandir',
-      date: '2025-11-12',
-      time: '5:00 PM - 10:00 PM',
-      description: 'Celebration of Diwali and the Jain New Year with special prayers and lighting ceremonies.',
-      image: 'https://images.unsplash.com/photo-1605559911160-e31b204c6734',
-    },
-  ];
-
-  const pastEvents = [
-    {
-      id: '5',
-      name: 'Akshaya Tritiya',
-      location: 'Sonagiri Jain Temple',
-      date: '2025-01-22',
-      time: '7:00 AM - 7:00 PM',
-      description: 'Celebration of the third day of the bright half of the lunar month of Vaishakha.',
-      image: 'https://images.unsplash.com/photo-1566438480900-0609be27a4be',
-    },
-    {
-      id: '6',
-      name: 'Jain Meditation Retreat',
-      location: 'Shravanabelagola',
-      date: '2025-02-10',
-      time: '6:00 AM - 6:00 PM',
-      description: 'Three-day meditation retreat focusing on Jain principles and practices.',
-      image: 'https://images.unsplash.com/photo-1508672019048-805c876b67e2',
-    },
-  ];
+  useEffect(() => {
+    dispatch(fetchEventsThunk());
+  }, [dispatch]);
 
   const toggleNotification = (id: string) => {
     setNotificationEnabled(prev => ({
@@ -121,6 +71,33 @@ export default function EventsScreen() {
     );
   };
 
+  if (loading && !upcomingEvents.length && !pastEvents.length) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Jain Events</Text>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF6B00" />
+          <Text style={styles.loadingText}>Loading events...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Jain Events</Text>
+        </View>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Error loading events. Please try again later.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -151,11 +128,20 @@ export default function EventsScreen() {
       </View>
 
       <FlatList
-        data={activeFilter === 'upcoming' ? events : pastEvents}
+        data={activeFilter === 'upcoming' ? upcomingEvents : pastEvents}
         renderItem={renderEventItem}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.eventList}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>
+              {activeFilter === 'upcoming' 
+                ? 'No upcoming events found' 
+                : 'No past events found'}
+            </Text>
+          </View>
+        }
       />
     </SafeAreaView>
   );
@@ -289,5 +275,36 @@ const styles = StyleSheet.create({
     color: '#FF6B00',
     fontWeight: '600',
     fontSize: 14,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#FF3B30',
+    textAlign: 'center',
+  },
+  emptyContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666666',
+    textAlign: 'center',
   },
 });

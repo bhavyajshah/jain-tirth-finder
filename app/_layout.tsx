@@ -1,27 +1,31 @@
-import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { Provider } from 'react-redux';
-import { store } from '../store';
+import { useEffect } from 'react';
+import { SplashScreen } from 'expo-router';
 
-declare global {
-  interface Window {
-    frameworkReady?: () => void;
-  }
-}
+// Prevent the splash screen from auto-hiding
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* reloading the app might trigger some race conditions, ignore them */
+});
 
 export default function RootLayout() {
   useEffect(() => {
-    window.frameworkReady?.();
+    // Hide splash screen after a short delay
+    setTimeout(() => {
+      SplashScreen.hideAsync().catch(() => {
+        /* reloading the app might trigger some race conditions, ignore them */
+      });
+    }, 1000);
   }, []);
 
   return (
-    <Provider store={store}>
+    <>
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
-    </Provider>
+    </>
   );
 }
